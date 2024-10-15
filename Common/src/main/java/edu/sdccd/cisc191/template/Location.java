@@ -4,12 +4,17 @@ import java.io.Serializable;
 
 // Parent class
 class Location implements Serializable {
+
     private String name;
+
 
     public Location(String name) {
         this.name = name;
     }
 
+    /**
+     * @return the name
+     */
     public String getName() {
         return name;
     }

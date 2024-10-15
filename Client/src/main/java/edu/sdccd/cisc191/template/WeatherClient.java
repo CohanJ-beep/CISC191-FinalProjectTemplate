@@ -18,30 +18,79 @@ import java.util.Scanner;
 
 public class WeatherClient {
 
+    private ObjectOutputStream out;
+    private ObjectInputStream in;
+    private Socket clientSocket;
+    private static WeatherLocation[] cities;
+    private static WeatherReport [][] weatherReports;
+    private int index;
+    private WeatherReport[] weatherArray;
+
+    /**
+     * creates a connection with the server and handles requests and responses
+     * @param ip device name
+     * @param port port number
+     */
+    public void startConnection(String ip, int port) throws Exception {
+        //creates a connection with a server
+        clientSocket = new Socket(ip, port);
+
+        //creates streams to receive and send objects
+        out = new ObjectOutputStream(clientSocket.getOutputStream());
+        in = new ObjectInputStream(clientSocket.getInputStream());
+
+        //creates object to send over
+        CustomerRequest request = new CustomerRequest();
+        // Send the city name to the server
+        out.writeObject(request);
+        out.flush();
+
+        // Receive weather reports from the server
+        CustomerResponse reports = (CustomerResponse) in.readObject();
+
+        reports.findIndex();
+        index = reports.getIndex();
+        //populates the cities 1d array
+        cities = reports.getCities();
+        CustomerResponse.loadWeatherReports();
+        //populates the weatherReports 2d array
+        weatherReports = reports.getWeatherReports();
+
+        //gets 1d array
+        weatherArray = weatherReports[index];
+
+        //uses information from the received and requested objects to print out a response
+        handleResponse(request.getCity());
+    }
+
+    /**
+     * Prints out the response sent by the server
+     * @param cityName name of city
+     */
+    public void handleResponse(String cityName){
+        for (WeatherReport report : weatherArray) {
+            System.out.println(report);
+        }
+    }
+
+    /**
+     * Stops the connection by closing the streams and socket connection
+     */
+    public void stopConnection() throws IOException {
+        out.close();
+        in.close();
+        clientSocket.close();
+    }
+
+    /**
+     * Initiates the networking
+     */
     public static void main(String[] args) {
-        try (Socket socket = new Socket("localhost", 12345);
-             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-             ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
-
-            Scanner scanner = new Scanner(System.in);
-
-            // Ask user to enter a city name
-            System.out.println("Enter the name of the city (San Diego or New York): ");
-            String city = scanner.nextLine();
-
-            // Send the city name to the server
-            out.writeObject(city);
-
-            // Receive weather reports from the server
-            WeatherReport[] reports = (WeatherReport[]) in.readObject();
-
-            // Print received weather reports
-            System.out.println("Weather Reports for " + city + ":");
-            for (WeatherReport report : reports) {
-                System.out.println(report);
-            }
-
-        } catch (IOException | ClassNotFoundException e) {
+        WeatherClient client = new WeatherClient();
+        try {
+            client.startConnection("localhost", 12345);
+            client.stopConnection();
+        } catch(Exception e) {
             e.printStackTrace();
         }
     }

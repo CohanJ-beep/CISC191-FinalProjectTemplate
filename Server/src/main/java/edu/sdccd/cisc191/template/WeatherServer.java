@@ -7,55 +7,67 @@ import java.util.Date;
 
 public class WeatherServer {
 
-    private static WeatherLocation[] cities = new WeatherLocation[2]; // One-dimensional array of cities
-    private static WeatherReport[][] weatherReports = new WeatherReport[2][2]; // Two-dimensional array of weather reports
+    private ServerSocket serverSocket;
 
-    public static void main(String[] args) {
-        populateWeatherLocations();
-        loadWeatherReports();
+    /**
+     * creates a connection with the client and handles the request
+     * @param port
+     */
+    public void start(int port) throws Exception {
+        serverSocket = new ServerSocket(port);
+        System.out.println("Server is listening on port " + port);
 
-        try (ServerSocket serverSocket = new ServerSocket(12345)) {
-            System.out.println("Server running at port 12345");
-            while (true) {
+        while (true) {
+            try {
+                // accepts client connection
                 Socket socket = serverSocket.accept();
+
+                // handles the client request
                 handleClientRequest(socket);
+            } catch (IOException e) {
+                System.out.println("Error connecting with client: " + e.getMessage());
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
-    private static void handleClientRequest(Socket socket) {
-        try (ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-             ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+    /**
+     * completes a series of tasks to handle the client's request
+     * @param clientSocket the client socket to receive client info
+     */
+    private static void handleClientRequest(Socket clientSocket) {
+        try (ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+             ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) {
 
-            // Client requests location
-            String requestedCity = (String) in.readObject();
+            //receives request from client
+            CustomerRequest request = (CustomerRequest) in.readObject();
+            //receives the user input
+            String city = request.getCity();
 
-            // Matches to WeatherLocation
-            for (int i = 0; i < cities.length; i++) {
-                if (cities[i].getName().equals(requestedCity)) {
-                    // Send weather reports back
-                    out.writeObject(weatherReports[i]);
-                    break;
-                }
-            }
+            //creates a response
+            CustomerResponse response = new CustomerResponse(city);
+
+            //sends the server response to the client
+            out.writeObject(response);
+            out.flush();
+
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 
-    private static void populateWeatherLocations() {
-        cities[0] = new WeatherLocation("San Diego", "Sunny");
-        cities[1] = new WeatherLocation("New York", "Rainy");
+    /**
+     * initiates the networking
+     */
+    public static void main(String[] args) {
+        WeatherServer server = new WeatherServer();
+        try {
+            server.start(12345);
+            System.out.println("Server running at port 12345");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private static void loadWeatherReports() {
-        weatherReports[0][0] = new WeatherReport(new Date(), "75F, clear skies, no precipitation");
-        weatherReports[0][1] = new WeatherReport(new Date(), "70F, light breeze, no precipitation");
 
-        weatherReports[1][0] = new WeatherReport(new Date(), "60F, overcast, moderate rain");
-        weatherReports[1][1] = new WeatherReport(new Date(), "58F, windy, heavy rain");
-    }
 }
 
