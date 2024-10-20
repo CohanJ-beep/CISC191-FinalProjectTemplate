@@ -29,6 +29,20 @@ public class WeatherClient {
             System.out.println("Enter the name of the city (San Diego or New York): ");
             String city = scanner.nextLine();
 
+            // Checks if input is valid and asks for input again if it's not
+            Boolean bool = true;
+            while (bool) {
+                if (city.equals("San Diego") || city.equals("New York")) {
+                    bool = false;
+                }
+
+                else {
+                    System.out.println("Invalid city.");
+                    System.out.println("Enter the name of the city (San Diego or New York): ");
+                    city = scanner.nextLine();
+                }
+            }
+
             // Send the city name to the server
             out.writeObject(city);
 
