@@ -7,41 +7,35 @@ import java.util.Date;
 
 public class WeatherServer {
 
-    private static WeatherLocation[] cities = new WeatherLocation[2]; // One-dimensional array of cities
-    private static WeatherReport[][] weatherReports = new WeatherReport[2][2]; // Two-dimensional array of weather reports
+    private static WeatherLocation[] cities = new WeatherLocation[2];
+    private static WeatherReport[][] weatherReports = new WeatherReport[2][2];
+    private static final String DATA_FILE = "weather_data.ser";
 
     public static void main(String[] args) {
-        populateWeatherLocations();
-        loadWeatherReports();
+        loadData();
 
         try (ServerSocket serverSocket = new ServerSocket(12345)) {
             System.out.println("Server running at port 12345");
+
             while (true) {
                 Socket socket = serverSocket.accept();
-                handleClientRequest(socket);
+                // Create a new thread for each client connection
+                new ServerThread(socket, cities, weatherReports).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private static void handleClientRequest(Socket socket) {
-        try (ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-             ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
-
-            // Client requests location
-            String requestedCity = (String) in.readObject();
-
-            // Matches to WeatherLocation
-            for (int i = 0; i < cities.length; i++) {
-                if (cities[i].getName().equals(requestedCity)) {
-                    // Send weather reports back
-                    out.writeObject(weatherReports[i]);
-                    break;
-                }
-            }
+    private static void loadData() {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(DATA_FILE))) {
+            cities = (WeatherLocation[]) in.readObject();
+            weatherReports = (WeatherReport[][]) in.readObject();
+            System.out.println("Data loaded from file.");
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            System.out.println("No data found, using default values.");
+            populateWeatherLocations();
+            loadWeatherReports();
         }
     }
 

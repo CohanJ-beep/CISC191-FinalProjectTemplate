@@ -3,7 +3,7 @@ package edu.sdccd.cisc191.template;
 import java.io.Serializable;
 import java.util.Date;
 
-class WeatherReport implements Serializable {
+public class WeatherReport implements Serializable {
     private Date reportDate;
     private String reportDetails;
 
@@ -25,4 +25,3 @@ class WeatherReport implements Serializable {
         return "Weather Report on " + reportDate + ": " + reportDetails;
     }
 }
-

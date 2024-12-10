@@ -2,8 +2,7 @@ package edu.sdccd.cisc191.template;
 
 import java.io.Serializable;
 
-// Child class
-class WeatherLocation extends Location implements Serializable {
+public class WeatherLocation extends Location implements Serializable {
     private String weatherCondition;
 
     public WeatherLocation(String name, String weatherCondition) {
